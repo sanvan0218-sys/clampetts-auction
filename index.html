@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Clampetts Auction House</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* VOICE: warm family Christmas, playful but clear enough for grandma on a phone
+   IDEA: an auction-house bid paddle and lot card
+   PICTURE: the live gift itself, big photo beside a huge high-bid number and shrinking timer
+   COLOUR and TYPE: evergreen field, white cards, cranberry for bids, gold for your bucks; Sora + Inter
+   LAYOUT: header band with your bucks, live lot, then lineup and standings; host tab for the organizer */
+:root{color-scheme:light dark;--bg:light-dark(#ffffff,#0b1612);--card:light-dark(#f2f5f3,#13231c);--ink:light-dark(#13201a,#eef4f0);--mute:light-dark(#5a6a62,#9fb3a9);--line:light-dark(#dde4e0,#23372e);--pine:#123b2c;--pine2:#1d5a43;--berry:light-dark(#c81e36,#ff5468);--gold:#f2b632}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 Inter,system-ui,sans-serif;overflow-x:clip}
+h1,h2,h3,.num{font-family:Sora,Inter,sans-serif;line-height:1.08;margin:0;text-wrap:balance}
+.band{padding:clamp(18px,3vw,40px) max(5vw,16px)}
+.wrap{max-width:1100px;margin:0 auto}
+header{background:var(--pine);color:#fff}
+header .wrap{display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between}
+header h1{font-size:clamp(26px,5vw,40px);font-weight:800}
+.paddle{background:var(--gold);color:#2a1d00;border-radius:16px;padding:8px 16px;text-align:center}
+.paddle small{display:block;font-size:13px;font-weight:600}.paddle b{font:800 26px Sora,sans-serif}
+#tabs{display:flex;gap:8px;margin-top:14px}
+#tabs button{background:transparent;color:#fff;border:2px solid #ffffff55;border-radius:99px;padding:8px 18px;font:600 15px Inter;min-height:44px;cursor:pointer}
+#tabs button[aria-pressed=true]{background:#fff;color:var(--pine);border-color:#fff}
+button,input,textarea{font:inherit}
+.btn{background:var(--pine2);color:#fff;border:0;border-radius:12px;padding:10px 18px;min-height:48px;font-weight:600;cursor:pointer}
+.btn.alt{background:transparent;color:var(--ink);border:2px solid var(--line)}
+.btn.red{background:var(--berry)}.btn.sm{min-height:40px;padding:6px 12px;font-size:14px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+input,textarea{width:100%;font-size:16px;padding:11px 12px;border-radius:10px;border:2px solid var(--line);background:var(--bg);color:var(--ink)}
+label{display:block;font-size:14px;font-weight:600;color:var(--mute);margin-bottom:4px}
+.card{background:var(--card);border-radius:20px;padding:clamp(16px,3vw,28px)}
+.mute{color:var(--mute)}
+#status{text-align:center;color:var(--mute);margin:0}
+.stage{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:clamp(16px,3vw,32px);align-items:start}
+.photo{position:relative;aspect-ratio:4/3;border-radius:20px;overflow:hidden;background:var(--pine2)}
+.photo img{width:100%;height:100%;object-fit:cover;display:block}
+.ph{position:absolute;inset:0;display:grid;place-items:center;color:#fff;font:800 clamp(40px,8vw,72px) Sora}
+.lot{position:absolute;left:12px;top:12px;background:#000a;color:#fff;font-size:13px;font-weight:600;padding:4px 10px;border-radius:99px}
+.live-tag{position:absolute;right:12px;top:12px;background:var(--berry);color:#fff;font-size:13px;font-weight:700;padding:4px 10px;border-radius:99px;animation:pulse 1.4s infinite}
+@keyframes pulse{50%{opacity:.55}}@media(prefers-reduced-motion:reduce){.live-tag{animation:none}.bar{transition:none!important}}
+.panel h2{font-size:clamp(24px,4vw,34px);font-weight:700}
+.hi{margin:16px 0 10px}.hi .lbl{font-size:14px;font-weight:600;color:var(--mute)}
+.amt{display:block;font:800 clamp(44px,9vw,68px)/1 Sora;color:var(--berry);margin:4px 0}
+.who{font-weight:600}
+.track{height:10px;border-radius:99px;background:var(--line);overflow:hidden;margin-top:6px}
+.bar{height:100%;background:var(--pine2);border-radius:99px;transition:width .25s linear}.bar.hot{background:var(--berry)}
+#clock{font-weight:600;font-size:15px}
+.quick{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:14px 0 8px}
+.quick .btn{min-height:56px;font:700 18px Sora;white-space:nowrap}
+.row{display:flex;gap:8px}.row input{flex:1}
+.winning{background:var(--gold);color:#2a1d00;border-radius:12px;padding:14px;font-weight:700;text-align:center;margin:14px 0}
+.hist{list-style:none;padding:0;margin:14px 0 0;font-size:14px}.hist li{display:flex;justify-content:space-between;padding:6px 0;border-top:1px solid var(--line)}
+.hostbar{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px;padding-top:14px;border-top:2px dashed var(--line)}
+.idle{text-align:center;padding:clamp(28px,6vw,56px) 16px}.idle h2{font-size:clamp(24px,4vw,34px)}
+h3{font-size:22px;margin-bottom:12px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.tile{background:var(--card);border-radius:14px;overflow:hidden}
+.tile .t{aspect-ratio:1;background:var(--pine2);position:relative}.tile .t img{width:100%;height:100%;object-fit:cover;display:block}
+.tile .t .ph{font-size:34px}.tile p{margin:0;padding:8px 10px;font-size:14px}.tile b{display:block;font-size:15px}
+.badge{display:inline-block;font-size:12px;font-weight:700;padding:2px 8px;border-radius:99px;background:var(--line)}
+.badge.sold{background:var(--berry);color:#fff}.badge.open{background:var(--gold);color:#2a1d00}
+.stand{list-style:none;padding:0;margin:0}.stand li{display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+.stand .num{font-weight:700;white-space:nowrap}
+.two{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:20px}
+.form{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.mg{display:flex;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.mg .th{width:56px;height:56px;border-radius:10px;overflow:hidden;background:var(--pine2);flex:none}.mg .th img{width:100%;height:100%;object-fit:cover}
+.mg .nm{flex:1 1 140px}.mg .acts{display:flex;gap:6px;flex-wrap:wrap}
+#toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:12px;font-weight:600;max-width:90vw;z-index:9}
+.sp{height:18px}
+@media(max-width:700px){.stage,.two{grid-template-columns:1fr}}
+</style></head><body>
+<header class="band"><div class="wrap">
+ <div><h1 id="title">Clampetts Auction House</h1><div id="tabs"><button data-tab="auction" aria-pressed="true">Auction</button><button data-tab="host" aria-pressed="false">Host</button></div></div>
+ <div class="paddle" id="paddle" hidden><small>Your bucks</small><b id="mybucks">$0</b></div>
+</div></header>
+
+<main class="band"><div class="wrap">
+<p id="status">Connecting to the auction…</p>
+<div id="setup" class="card" hidden><h2 style="font-size:26px">Almost ready</h2><p>This page still needs its Firebase settings. Open <b>index.html</b>, find <b>firebaseConfig</b> near the bottom, and paste in the settings from your Firebase project.</p></div>
+
+<section id="v-auction">
+ <div id="joinbox" class="card" hidden>
+  <h2 style="font-size:26px">Grab your paddle</h2>
+  <p class="mute">Pick the name everyone will see when you bid.</p>
+  <div class="row"><input id="nick" maxlength="30" placeholder="e.g. Aunt Linda" autocomplete="nickname"><button class="btn" data-act="join">Join</button></div>
+ </div>
+ <div class="sp"></div>
+ <div id="live"></div>
+ <div class="sp"></div>
+ <div class="two">
+  <div><h3>The lineup</h3><div class="grid" id="lineup"></div></div>
+  <div><h3>Bucks left</h3><ul class="stand" id="stand"></ul></div>
+ </div>
+</section>
+
+<section id="v-host" hidden>
+ <div class="card" id="lock">
+  <h3>Host login</h3>
+  <p class="mute">Enter the host password to run the auction. Only the host needs this.</p>
+  <div class="row"><input id="pw" type="password" autocomplete="off" placeholder="Password"><button class="btn" data-act="unlock">Unlock</button></div>
+ </div>
+ <div id="hostbody" hidden>
+ <div class="card">
+  <h3>Auction settings</h3>
+  <div class="form">
+   <div style="grid-column:1/-1"><label for="s-title">Auction name</label><input id="s-title"></div>
+   <div><label for="s-start">Starting bucks each</label><input id="s-start" type="number" min="1" inputmode="numeric"></div>
+   <div><label for="s-open">Opening bid</label><input id="s-open" type="number" min="1" inputmode="numeric"></div>
+   <div><label for="s-inc">Min raise</label><input id="s-inc" type="number" min="1" inputmode="numeric"></div>
+   <div><label for="s-timer">Seconds per gift</label><input id="s-timer" type="number" min="10" inputmode="numeric"></div>
+   <div><label for="s-ext">Late bids add (sec)</label><input id="s-ext" type="number" min="0" inputmode="numeric"></div>
+  </div>
+  <p class="mute" style="font-size:14px">If someone bids in the last few seconds, the clock stays open at least this long after their bid, so nobody gets sniped.</p>
+  <button class="btn" data-act="save">Save settings</button>
+ </div>
+ <div class="sp"></div>
+ <div class="card">
+  <h3>Add a gift</h3>
+  <div class="form">
+   <div><label for="g-file">Photo</label><input id="g-file" type="file" accept="image/*"></div>
+   <div><label for="g-name">Gift name</label><input id="g-name" maxlength="60" placeholder="Mystery box #1"></div>
+   <div style="grid-column:1/-1"><label for="g-note">Hint or description (optional)</label><input id="g-note" maxlength="140" placeholder="Something cozy…"></div>
+  </div>
+  <div class="sp"></div>
+  <button class="btn" data-act="add" id="addbtn">Add gift</button>
+ </div>
+ <div class="sp"></div>
+ <div class="card">
+  <h3>Gifts in order</h3>
+  <div id="manage"></div>
+  <div class="sp"></div>
+  <button class="btn alt" data-act="reset" id="resetbtn">Reset auction (clear all wins)</button>
+ </div>
+ <div class="sp"></div>
+ <button class="btn alt sm" data-act="lockout">Log out of host</button>
+ </div>
+</section>
+</div></main>
+<div id="toast" hidden></div>
+
+<script type="module">
+// ====== PASTE YOUR FIREBASE SETTINGS HERE (Firebase console > Project settings > Your apps) ======
+const firebaseConfig = {
+  apiKey: "AIzaSyAm6W2csIvd9W1K-YLvQUNXNLs8GQdxhXM",
+  authDomain: "clampetts-auction.firebaseapp.com",
+  databaseURL: "https://clampetts-auction-default-rtdb.firebaseio.com",
+  projectId: "clampetts-auction",
+  storageBucket: "clampetts-auction.firebasestorage.app",
+  messagingSenderId: "1066388952838",
+  appId: "1:1066388952838:web:4c0aaef8b7afe3f726b087"
+};
+// ==================================================================================================
+
+import {initializeApp} from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+import {getAuth,signInAnonymously,onAuthStateChanged} from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+import {getDatabase,ref,onValue,set,update,push,remove,get,runTransaction,serverTimestamp} from "https://www.gstatic.com/firebasejs/11.0.2/firebase-database.js";
+
+const $=s=>document.querySelector(s);
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const money=n=>'$'+Math.round(Number(n)||0).toLocaleString();
+const DEF={title:'Clampetts Auction House',startBucks:1000,openBid:25,minInc:25,timerSec:45,extendSec:10};
+let db=null,me=null,isHost=false,tab='auction',off=0;
+let S={},ST={},gifts=[],images={},tops={},hist={},bidders={},ready=false,settlingId=null,filled=false,resetArm=false,delArm=null;
+const now=()=>Date.now()+off;
+
+const cfg=()=>{const c={...DEF,...S};for(const k of ['startBucks','openBid','minInc','timerSec','extendSec'])c[k]=Number(c[k])||DEF[k];if(!c.title)c.title=DEF.title;return c};
+function toast(t){const n=$('#toast');n.textContent=t;n.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>n.hidden=true,3500)}
+const spent=u=>gifts.filter(g=>g.status==='sold'&&g.winner===u).reduce((a,g)=>a+(Number(g.price)||0),0);
+const left=u=>cfg().startBucks-spent(u);
+const nameOf=u=>(bidders[u]&&bidders[u].nick)||'Bidder';
+const liveGift=()=>gifts.find(g=>g.id===ST.liveGift&&g.status==='open');
+const topOf=g=>{const t=tops[g.id];return t&&t.round===g.round&&typeof t.amt==='number'?{u:t.uid,amt:t.amt,at:Number(t.at)||0}:null};
+const histOf=g=>Object.values(hist[g.id]||{}).filter(h=>h.round===g.round).map(h=>({u:h.uid,amt:Number(h.amt)})).sort((a,b)=>b.amt-a.amt);
+function endOf(g){const t=topOf(g);return Math.max(Number(ST.endsAt)||0,t?t.at+cfg().extendSec*1000:0)}
+const imgSrc=id=>{const d=images[id];return typeof d==='string'&&d.startsWith('data:image/')?d:''};
+const pic=(g,i)=>imgSrc(g.id)?`<img src="${esc(imgSrc(g.id))}" alt="${esc(g.name)}">`:`<div class="ph">#${i+1}</div>`;
+
+function render(){
+ if(!ready)return;
+ const c=cfg();$('#title').textContent=c.title;document.title=c.title;
+ const joined=me&&bidders[me];
+ $('#paddle').hidden=!joined;if(joined)$('#mybucks').textContent=money(left(me));
+ $('#joinbox').hidden=!me||!!joined;
+ renderLive();renderLineup();renderStand();if(isHost)renderManage();
+}
+function renderLive(){
+ const keep=document.activeElement&&document.activeElement.id==='custom'?$('#custom').value:null;
+ const g=liveGift(),el=$('#live'),c=cfg();
+ if(!g){
+  const waiting=gifts.filter(x=>x.status==='waiting'||x.status==='passed');
+  const done=gifts.length&&!waiting.length;
+  el.innerHTML=`<div class="card idle"><h2>${done?'That’s a wrap! Merry Christmas!':gifts.length?'Hang tight, the next gift is coming up':'The host is still wrapping gifts'}</h2>
+   <p class="mute">${done?'Scroll down to see who won what.':waiting.length?waiting.length+' gift'+(waiting.length>1?'s':'')+' left to bid on.':'Gifts will show up here once they’re added.'}</p>
+   ${isHost&&waiting.length?`<button class="btn" data-act="open" data-id="${esc(waiting[0].id)}">Open bidding on “${esc(waiting[0].name)}”</button>`:''}</div>`;
+  return;
+ }
+ const i=gifts.indexOf(g),top=topOf(g),others=histOf(g).filter(h=>!top||h.amt<top.amt),min=top?top.amt+c.minInc:c.openBid,joined=me&&bidders[me],mine=joined?left(me):0;
+ let box='';
+ if(!joined)box=`<p class="mute">Join above to start bidding.</p>`;
+ else if(top&&top.u===me)box=`<div class="winning">You’re the high bidder!</div>`;
+ else if(min>mine)box=`<p class="mute">You need ${money(min)} to bid, and you have ${money(mine)} left.</p>`;
+ else{const opts=[min,min+c.minInc,min+c.minInc*3].filter(v=>v<=mine);
+  box=`<div class="quick">${opts.map(v=>`<button class="btn" data-act="bid" data-amt="${v}">${money(v)}</button>`).join('')}</div>
+  <div class="row"><input id="custom" type="number" inputmode="numeric" min="${min}" max="${mine}" placeholder="Other amount"><button class="btn red" data-act="bidc">Bid</button></div>`}
+ el.innerHTML=`<div class="stage">
+  <div class="photo">${pic(g,i)}<span class="lot">Gift ${i+1} of ${gifts.length}</span><span class="live-tag">LIVE</span></div>
+  <div class="panel card">
+   <h2>${esc(g.name)}</h2>${g.note?`<p class="mute" style="margin:6px 0 0">${esc(g.note)}</p>`:''}
+   <div class="hi"><span class="lbl">High bid</span><span class="amt">${top?money(top.amt):money(c.openBid)}</span>
+    <span class="who">${top?(top.u===me?'You':esc(nameOf(top.u))):'Opening bid, no bids yet'}</span></div>
+   <span id="clock"></span><div class="track"><div class="bar" id="bar"></div></div>
+   ${box}
+   ${others.length?`<ul class="hist">${others.slice(0,4).map(b=>`<li><span>${esc(b.u===me?'You':nameOf(b.u))}</span><span>${money(b.amt)}</span></li>`).join('')}</ul>`:''}
+   ${isHost?`<div class="hostbar"><button class="btn red sm" data-act="sold">${top?'Sold now':'Close (no bids)'}</button><button class="btn alt sm" data-act="more">+15 sec</button><button class="btn alt sm" data-act="pass">Skip gift</button></div>`:''}
+  </div></div>`;
+ if(keep!==null){const k=$('#custom');if(k){k.value=keep;k.focus()}}
+ tick();
+}
+function renderLineup(){
+ $('#lineup').innerHTML=gifts.length?gifts.map((g,i)=>{let b='<span class="badge">Up next</span>';
+  if(g.status==='open')b='<span class="badge open">Bidding now</span>';
+  else if(g.status==='sold')b=`<span class="badge sold">${esc(g.winner===me?'You':nameOf(g.winner))} · ${money(g.price)}</span>`;
+  else if(g.status==='passed')b='<span class="badge">Skipped</span>';
+  return `<div class="tile"><div class="t">${pic(g,i)}</div><p><b>${esc(g.name)}</b>${b}</p></div>`}).join(''):'<p class="mute">No gifts yet.</p>';
+}
+function renderStand(){
+ const ids=Object.keys(bidders).sort((a,b)=>left(b)-left(a));
+ $('#stand').innerHTML=ids.length?ids.map(u=>{const w=gifts.filter(g=>g.status==='sold'&&g.winner===u).length;
+  return `<li><span>${esc(u===me?nameOf(u)+' (you)':nameOf(u))}<br><small class="mute">${w} gift${w===1?'':'s'} won</small></span><span class="num">${money(left(u))}</span></li>`}).join(''):'<li class="mute">Nobody has joined yet.</li>';
+}
+function renderManage(){
+ const lg=liveGift();
+ $('#manage').innerHTML=gifts.length?gifts.map((g,i)=>{const st=g.status==='sold'?`Sold to ${esc(nameOf(g.winner))} for ${money(g.price)}`:g.status==='open'?'Bidding now':g.status==='passed'?'Skipped':'Waiting';
+  const id=esc(g.id);
+  return `<div class="mg"><div class="th">${imgSrc(g.id)?`<img src="${esc(imgSrc(g.id))}" alt="">`:''}</div><div class="nm"><b>${i+1}. ${esc(g.name)}</b><br><small class="mute">${st}</small></div><div class="acts">
+   ${!lg&&g.status!=='sold'&&g.status!=='open'?`<button class="btn sm" data-act="open" data-id="${id}">Open</button>`:''}
+   ${g.status==='sold'?`<button class="btn alt sm" data-act="reopen" data-id="${id}">Undo sale</button>`:''}
+   <button class="btn alt sm" data-act="up" data-id="${id}" ${i===0?'disabled':''} aria-label="Move up">↑</button>
+   <button class="btn alt sm" data-act="down" data-id="${id}" ${i===gifts.length-1?'disabled':''} aria-label="Move down">↓</button>
+   ${g.status!=='open'?`<button class="btn ${delArm===g.id?'red':'alt'} sm" data-act="del" data-id="${id}">${delArm===g.id?'Tap again to delete':'Delete'}</button>`:''}
+  </div></div>`}).join(''):'<p class="mute">Add your first gift above.</p>';
+}
+function fillSettings(){
+ if(filled&&document.activeElement&&document.activeElement.closest('#v-host'))return;
+ const c=cfg();$('#s-title').value=c.title;$('#s-start').value=c.startBucks;$('#s-open').value=c.openBid;$('#s-inc').value=c.minInc;$('#s-timer').value=c.timerSec;$('#s-ext').value=c.extendSec;filled=true;
+}
+function showHost(){$('#lock').hidden=isHost;$('#hostbody').hidden=!isHost;if(isHost){filled=false;fillSettings()}render()}
+function setTab(t){tab=t;$('#v-auction').hidden=t!=='auction';$('#v-host').hidden=t!=='host';
+ document.querySelectorAll('#tabs button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.tab===t))}
+function tick(){
+ const g=liveGift(),clk=$('#clock'),bar=$('#bar');if(!g||!clk)return;
+ const ms=endOf(g)-now(),s=Math.max(0,Math.ceil(ms/1000));
+ clk.textContent=ms>0?(s<=10?`Going, going… ${s}s`:`${s} seconds left`):'Closing…';
+ bar.style.width=Math.max(0,Math.min(100,ms/(cfg().timerSec*1000)*100))+'%';bar.classList.toggle('hot',ms<10000);
+ if(isHost&&ms<-800&&settlingId!==g.id)settle(g);
+}
+async function settle(g,skip){
+ settlingId=g.id;
+ try{const t=skip?null:topOf(g),u={'state/liveGift':null};
+  if(t){u[`gifts/${g.id}/status`]='sold';u[`gifts/${g.id}/winner`]=t.u;u[`gifts/${g.id}/price`]=t.amt}else u[`gifts/${g.id}/status`]='passed';
+  await update(ref(db),u);
+  toast(t?`Sold to ${nameOf(t.u)} for ${money(t.amt)}!`:'No sale, moving on');
+ }catch(e){settlingId=null;toast('Couldn’t close that gift, try again')}
+}
+async function placeBid(amt){
+ const g=liveGift();if(!g||!me||!bidders[me])return;
+ amt=Math.floor(Number(amt));const c=cfg(),t=topOf(g),min=t?t.amt+c.minInc:c.openBid;
+ if(now()>endOf(g))return toast('Bidding just closed on this one');
+ if(t&&t.u===me)return toast('You’re already winning');
+ if(!(amt>=min))return toast('Bid at least '+money(min));
+ if(amt>left(me))return toast('You only have '+money(left(me))+' left');
+ try{
+  const r=await runTransaction(ref(db,'top/'+g.id),cur=>{
+   if(cur&&cur.round===g.round&&cur.amt+c.minInc>amt)return;
+   return {amt,uid:me,round:g.round,at:serverTimestamp()};
+  });
+  if(!r.committed)return toast('Someone just beat you to it, bid again');
+  push(ref(db,'history/'+g.id),{amt,uid:me,round:g.round}).catch(()=>{});
+ }catch(e){toast('Bid didn’t go through, try again')}
+}
+async function shrink(f){
+ const b=await createImageBitmap(f),k=Math.min(1,900/Math.max(b.width,b.height)),cv=document.createElement('canvas');
+ cv.width=Math.round(b.width*k);cv.height=Math.round(b.height*k);cv.getContext('2d').drawImage(b,0,0,cv.width,cv.height);
+ return cv.toDataURL('image/jpeg',.72);
+}
+async function addGift(){
+ const name=$('#g-name').value.trim().slice(0,60),note=$('#g-note').value.trim().slice(0,140),f=$('#g-file').files[0];
+ if(!name)return toast('Give the gift a name first');
+ const btn=$('#addbtn');btn.disabled=true;btn.textContent='Adding…';
+ try{const id=push(ref(db,'gifts')).key,order=gifts.reduce((m,g)=>Math.max(m,Number(g.order)||0),0)+1,u={};
+  if(f)u['images/'+id]=await shrink(f);
+  u['gifts/'+id]={name,note,order,status:'waiting',round:0,winner:null,price:0};
+  await update(ref(db),u);
+  $('#g-name').value='';$('#g-note').value='';$('#g-file').value='';toast('Gift added');
+ }catch(e){toast('Couldn’t add that gift, try again')}
+ btn.disabled=false;btn.textContent='Add gift';
+}
+async function openGift(id){
+ const g=gifts.find(x=>x.id===id);if(!g)return;if(liveGift())return toast('Close the current gift first');
+ try{await update(ref(db),{[`gifts/${id}/status`]:'open',[`gifts/${id}/round`]:(Number(g.round)||0)+1,[`gifts/${id}/winner`]:null,[`gifts/${id}/price`]:0,'state/liveGift':id,'state/endsAt':now()+cfg().timerSec*1000});
+  if(tab!=='auction')setTab('auction');
+ }catch(e){toast('Couldn’t open that gift')}
+}
+async function move(id,dir){
+ const i=gifts.findIndex(g=>g.id===id),j=i+dir;if(i<0||j<0||j>=gifts.length)return;
+ const a=gifts[i],b=gifts[j],oa=Number(a.order)||i,ob=Number(b.order)||j;
+ try{await update(ref(db),{[`gifts/${a.id}/order`]:ob===oa?ob+dir:ob,[`gifts/${b.id}/order`]:oa})}catch(e){toast('Couldn’t reorder')}
+}
+async function resetAll(){
+ const u={'state/liveGift':null};for(const g of gifts){u[`gifts/${g.id}/status`]='waiting';u[`gifts/${g.id}/winner`]=null;u[`gifts/${g.id}/price`]=0}
+ try{await update(ref(db),u);toast('Auction reset, everyone has full bucks again')}catch(e){toast('Reset didn’t finish, try again')}
+}
+
+document.addEventListener('click',async e=>{
+ const tb=e.target.closest('[data-tab]');if(tb)return setTab(tb.dataset.tab);
+ const b=e.target.closest('[data-act]');if(!b||!db||!me)return;
+ const a=b.dataset.act,id=b.dataset.id,g=liveGift();
+ if(a!=='reset'&&resetArm){resetArm=false;$('#resetbtn').textContent='Reset auction (clear all wins)';$('#resetbtn').classList.remove('red')}
+ if(a!=='del'&&delArm){delArm=null;renderManage()}
+ if(a==='unlock'){const pw=$('#pw').value.trim().toUpperCase();if(!pw)return;
+  try{await set(ref(db,'hosts/'+me),pw);isHost=true;$('#pw').value='';showHost();toast('Welcome, host!')}catch(err){toast('Wrong password')}}
+ else if(a==='lockout'){try{await remove(ref(db,'hosts/'+me))}catch(err){}isHost=false;showHost();setTab('auction')}
+ else if(a==='join'){const nick=$('#nick').value.trim().slice(0,30);if(!nick)return toast('Type a name first');
+  try{await set(ref(db,'bidders/'+me),{nick})}catch(err){toast('Couldn’t join, try again')}}
+ else if(a==='bid')placeBid(b.dataset.amt);
+ else if(a==='bidc')placeBid($('#custom').value);
+ else if(!isHost)return;
+ else if(a==='open')openGift(id);
+ else if(a==='sold'&&g)settle(g);
+ else if(a==='pass'&&g)settle(g,true);
+ else if(a==='more'&&g){try{await set(ref(db,'state/endsAt'),endOf(g)+15000)}catch(err){toast('Couldn’t add time')}}
+ else if(a==='reopen'){try{await update(ref(db,'gifts/'+id),{status:'waiting',winner:null,price:0});toast('Sale undone, bucks returned')}catch(err){toast('Couldn’t undo')}}
+ else if(a==='up')move(id,-1);else if(a==='down')move(id,1);
+ else if(a==='del'){if(delArm!==id){delArm=id;renderManage();return}delArm=null;
+  try{await update(ref(db),{['gifts/'+id]:null,['images/'+id]:null,['top/'+id]:null,['history/'+id]:null});toast('Gift removed')}catch(err){toast('Couldn’t delete')}}
+ else if(a==='add')addGift();
+ else if(a==='save'){const n=s=>Math.max(1,Math.floor(Number($(s).value)||0));
+  const d={title:$('#s-title').value.trim().slice(0,60)||DEF.title,startBucks:n('#s-start'),openBid:n('#s-open'),minInc:n('#s-inc'),timerSec:Math.max(10,n('#s-timer')),extendSec:Math.max(0,Math.floor(Number($('#s-ext').value)||0))};
+  try{await set(ref(db,'settings'),d);toast('Settings saved')}catch(err){toast('Couldn’t save settings')}}
+ else if(a==='reset'){if(!resetArm){resetArm=true;b.textContent='Tap again to reset everything';b.classList.add('red');return}
+  resetArm=false;b.textContent='Reset auction (clear all wins)';b.classList.remove('red');resetAll()}
+});
+document.addEventListener('keydown',e=>{if(e.key!=='Enter')return;if(e.target.id==='custom')placeBid(e.target.value);if(e.target.id==='nick')$('[data-act=join]').click();if(e.target.id==='pw')$('[data-act=unlock]').click()});
+
+setInterval(tick,250);
+if(!firebaseConfig.apiKey||!firebaseConfig.databaseURL){$('#status').hidden=true;$('#setup').hidden=false}
+else{
+ const app=initializeApp(firebaseConfig),auth=getAuth(app);db=getDatabase(app);
+ const timer=setTimeout(()=>{if(!ready)$('#status').textContent='Still connecting… check your signal.'},10000);
+ signInAnonymously(auth).catch(()=>{$('#status').textContent='Couldn’t connect. Check that Anonymous sign-in is turned on in Firebase.'});
+ onAuthStateChanged(auth,async u=>{
+  if(!u||me)return;me=u.uid;
+  const on=(p,fn)=>onValue(ref(db,p),s=>{fn(s.val());render()},()=>{$('#status').hidden=false;$('#status').textContent='Couldn’t load the auction. Check the database rules.'});
+  onValue(ref(db,'.info/serverTimeOffset'),s=>off=Number(s.val())||0);
+  on('settings',v=>{S=v||{};if(isHost)fillSettings()});
+  on('state',v=>{ST=v||{};if(!ready){ready=true;clearTimeout(timer);$('#status').hidden=true;render()}});
+  on('gifts',v=>{gifts=Object.entries(v||{}).map(([id,g])=>({id,...g})).sort((a,b)=>(a.order||0)-(b.order||0))});
+  on('images',v=>{images=v||{}});
+  on('top',v=>{tops=v||{}});
+  on('history',v=>{hist=v||{}});
+  on('bidders',v=>{bidders=v||{}});
+  try{isHost=(await get(ref(db,'hosts/'+me))).exists()}catch(e){isHost=false}
+  showHost();
+ });
+}
+</script>
+</body></html>
